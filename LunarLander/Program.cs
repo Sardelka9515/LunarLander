@@ -79,7 +79,7 @@ namespace LunarLander
         {
             Display.Message = null;
             Moon.Clear();
-            Lander.Position = new(Random.Shared.Next(0, (int)Moon.Size.X), 0);
+            Lander.Position = new(Random.Shared.Next(10, (int)Moon.Size.X-10), 0);
             Lander.Velocity = default;
             Lander.AngularVelocity = 0;
             Lander.Angle = 0;
@@ -103,7 +103,7 @@ namespace LunarLander
             Line ray;
             while (!Moon.TryRayCast(
                 ray = new Line(
-                    new(Random.Shared.Next(20, (int)Moon.Size.X-20), 0),
+                    new(Random.Shared.Next(20, (int)Moon.Size.X - 20), 0),
                     Vector2.UnitY * 99999),
                 out Pad.Position)) ;
 
@@ -167,12 +167,15 @@ namespace LunarLander
             IBrush _fireBrush;
             IBrush _boxBrush;
             IBrush _whiteBrush;
+            IBrush _blackBrush;
             private void Setup(object sender, SetupGraphicsEventArgs e)
             {
                 _debugBrush = e.Graphics.CreateSolidBrush(new Color(128, 128, 128, 128));
                 _fireBrush = e.Graphics.CreateSolidBrush(new Color(230, 46, 0));
-                _boxBrush = _landerBrush = e.Graphics.CreateSolidBrush(new Color(112, 112, 112));
+                _boxBrush = e.Graphics.CreateSolidBrush(new Color(150, 150, 150));
+                _landerBrush = e.Graphics.CreateSolidBrush(new Color(100, 100, 100));
                 _whiteBrush = e.Graphics.CreateSolidBrush(new Color(255, 255, 255));
+                _blackBrush = e.Graphics.CreateSolidBrush(new Color(0, 0, 0));
                 _font = e.Graphics.CreateFont("Arial", 20);
             }
             TransformationMatrix _scaleMatrix;
@@ -210,12 +213,10 @@ namespace LunarLander
                 gfx.TransformStart(_scaleMatrix);
 
 
-                bool isColliding = false;
                 foreach (var m in Colliders)
                 {
                     if (Lander.IsIntersectingWith(m))
                     {
-                        isColliding = true;
                         gfx.TransformEnd();
                         if (Lander.Velocity.Length() < 3.5)
                         {
@@ -236,8 +237,6 @@ namespace LunarLander
                     }
                 }
 
-
-                _landerBrush = isColliding ? _fireBrush : _boxBrush;
 #if DEBUG
 
                 Vector2 point = default;
@@ -295,6 +294,8 @@ namespace LunarLander
                     d.AngularVelocity = (Random.Shared.NextSingle() - 0.5f) * MathF.PI * 4;
                     if (Random.Shared.Next(0, 3) == 1)
                         d.Brush = _fireBrush;
+                    else
+                        d.Brush = _landerBrush;
                     Moon.AddBox(d);
                 }
                 Lander.Position = default;
@@ -326,11 +327,15 @@ namespace LunarLander
                 var hh = b.Size.Y / 2;
                 var thrustPos = new Vector2(0, 1);
                 var headPos = new Vector2(0, thrustPos.Y - hw);
+                var head = new Circle(headPos.ToPointF(), hw);
+
                 // draw head
-                gfx.FillCircle(_landerBrush, headPos.ToPointF(), hw);
+                gfx.FillCircle(_landerBrush, head);
+
                 // Draw legs
                 gfx.DrawLine(_landerBrush, new PointF(hw - 1, headPos.Y), new PointF(hw, hh), 1);
                 gfx.DrawLine(_landerBrush, new PointF(-hw + 1, headPos.Y), new PointF(-hw, hh), 1);
+
                 if (IsGoingUp)
                 {
                     var hwFire = Random.Shared.Next(1, 2);
