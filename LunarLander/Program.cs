@@ -79,7 +79,7 @@ namespace LunarLander
         {
             Display.Message = null;
             Moon.Clear();
-            Lander.Position = new(Random.Shared.Next(10, (int)Moon.Size.X-10), 0);
+            Lander.Position = new(Random.Shared.Next(10, (int)Moon.Size.X - 10), 0);
             Lander.Velocity = default;
             Lander.AngularVelocity = 0;
             Lander.Angle = 0;
