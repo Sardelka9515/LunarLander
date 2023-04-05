@@ -53,9 +53,6 @@ namespace LunarLander
             proc(new(Position - (up + right) / 2, right));
             proc(new(Position + (right - up) / 2, up));
             proc(new(Position - (right + up) / 2, up));
-            // proc(new(Position - UpVector * Size.Y / 2, RightVector * Size.X));
-            // proc(new(UpVector * Size.Y, Position + RightVector * Size.X / 2));
-            // proc(new(UpVector * Size.Y, Position - RightVector * Size.X / 2));
         }
         public Box(Vector2 size) { Size = size; }
         public Vector2 UpVector

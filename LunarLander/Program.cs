@@ -232,21 +232,6 @@ namespace LunarLander
 
                 Vector2 point = default;
 
-                // Ground.EnumEdges((e) =>
-                // {
-                //     if (Lander.YAxis.TryIntersect(e, out point))
-                //     {
-                //         gfx.DrawCircle(_fireBrush, point.ToPointF(), 1, 0.5f);
-                //     }
-                // });
-
-                // if (Lander.XAxis.TryIntersect(Ground.YAxis, out point))
-                //     gfx.DrawCircle(_debugBrush, point.ToPointF(), 1, 0.5f);
-                // if (Lander.YAxis.TryIntersect(Ground.XAxis, out point))
-                //     gfx.DrawCircle(_debugBrush, point.ToPointF(), 1, 0.5f);
-                // if (Lander.YAxis.TryIntersect(Ground.YAxis, out point))
-                //     gfx.DrawCircle(_debugBrush, point.ToPointF(), 1, 0.5f);
-
                 var ray = new Line(Lander.Position - Lander.UpVector * 10, Lander.UpVector * -1000);
 
                 gfx.DrawLine(_fireBrush, ray, 1);
@@ -311,10 +296,6 @@ namespace LunarLander
             {
                 gfx.TransformStart(RotationTransform(b.Angle, b.Position) * _scaleMatrix);
 
-#if DEBUG
-                // gfx.DrawLine(_debugBrush, new SharpD2D.Drawing.Line(-9999, 0, 9999, 0), 0.5f);
-                // gfx.DrawLine(_debugBrush, new SharpD2D.Drawing.Line(0, -9999, 0, 9999), 0.5f);
-#endif
                 if (b == Lander)
                 {
                     DrawLander(b,gfx);
