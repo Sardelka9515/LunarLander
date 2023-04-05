@@ -49,13 +49,13 @@ namespace LunarLander
             Window.SizeChanged += (s, e) => Display.Size = Window.Size;
             Display.KeyDown += (s, e) =>
             {
-                if (e.KeyData == Keys.Space)
+                if (e.KeyCode == Keys.Space)
                 {
                     GameSetup();
                     Display.Stop();
                     Display.Start();
                 }
-                else if (e.KeyData == Keys.F11)
+                else if (e.KeyCode == Keys.F11)
                 {
                     if (Window.FormBorderStyle == FormBorderStyle.None)
                     {
@@ -103,7 +103,7 @@ namespace LunarLander
             Line ray;
             while (!Moon.TryRayCast(
                 ray = new Line(
-                    new(Random.Shared.Next(0, (int)Moon.Size.X), 0),
+                    new(Random.Shared.Next(20, (int)Moon.Size.X-20), 0),
                     Vector2.UnitY * 99999),
                 out Pad.Position)) ;
 
