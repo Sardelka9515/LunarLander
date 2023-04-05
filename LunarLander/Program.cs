@@ -196,9 +196,6 @@ namespace LunarLander
                 {
                     _scale = currentSize.Width / _scene.Size.X;
                 }
-                var desiredSize = new System.Drawing.Size((int)(_scene.Size.X * _scale), (int)(_scene.Size.Y * _scale));
-                if (desiredSize != Size)
-                    BeginInvoke(() => Size = desiredSize);
                 _scaleMatrix = new TransformationMatrix(_scale, 0, 0, _scale, 0, 0);
                 _scene.Update(e.DeltaTime / 1000f);
                 gfx.BeginScene();
@@ -282,17 +279,17 @@ namespace LunarLander
 
             private void Explode()
             {
-                var dc = Random.Shared.Next(30, 50);
+                var dc = Random.Shared.Next(40, 60);
                 for (int i = 0; i < dc; i++)
                 {
                     var d = new Box(new(Random.Shared.Next(1, 5) * 0.5f, Random.Shared.Next(1, 5) * 0.5f))
                     {
                         Position =
-                        Random.Shared.Next(-5, 5) * Lander.UpVector +
-                        Random.Shared.Next(-5, 5) * Lander.RightVector +
+                        Random.Shared.Next(-5, 5) * Lander.UpVector * 0.2f +
+                        Random.Shared.Next(-5, 5) * Lander.RightVector * 0.2f +
                         Lander.Position
                     };
-                    d.Velocity = (d.Position - Lander.Position) * 5 * Random.Shared.NextSingle() + Lander.Velocity * 0.3f;
+                    d.Velocity = (d.Position - Lander.Position) * 20 * Random.Shared.NextSingle() + Lander.Velocity * 0.3f;
                     d.Acceleration = Gravity * 2;
                     d.Angle = Random.Shared.NextSingle() * MathF.PI * 2;
                     d.AngularVelocity = (Random.Shared.NextSingle() - 0.5f) * MathF.PI * 4;
