@@ -20,9 +20,9 @@ namespace LunarLander
         static bool Restarted;
         static Scene Moon = new Scene(new(192, 108));
         static Box Lander = new(new(4.3f, 5.5f));
-        static Box Ground = new(new(Moon.Size.X, 10))
+        static Box Ground = new(new(Moon.Size.X, 30))
         {
-            Position = new(Moon.Size.X / 2, Moon.Size.Y - 10)
+            Position = new(Moon.Size.X / 2, Moon.Size.Y)
         };
         static MainWindow Window;
         static Box Pad = new(new(8, 2));
@@ -54,6 +54,19 @@ namespace LunarLander
                     GameSetup();
                     Display.Stop();
                     Display.Start();
+                }
+                else if (e.KeyData == Keys.F11)
+                {
+                    if (Window.FormBorderStyle == FormBorderStyle.None)
+                    {
+                        Window.FormBorderStyle = FormBorderStyle.Sizable;
+                        Window.WindowState = FormWindowState.Normal;
+                    }
+                    else
+                    {
+                        Window.FormBorderStyle = FormBorderStyle.None;
+                        Window.WindowState = FormWindowState.Maximized;
+                    }
                 }
             };
             var controllerThread = new Thread(Controller) { IsBackground = true };
@@ -298,7 +311,7 @@ namespace LunarLander
 
                 if (b == Lander)
                 {
-                    DrawLander(b,gfx);
+                    DrawLander(b, gfx);
                 }
                 else
                 {
@@ -310,7 +323,7 @@ namespace LunarLander
                 gfx.TransformEnd();
             }
 
-            private void DrawLander(Box b,Graphics gfx)
+            private void DrawLander(Box b, Graphics gfx)
             {
                 var hw = b.Size.X / 2;
                 var hh = b.Size.Y / 2;
