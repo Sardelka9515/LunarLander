@@ -18,15 +18,20 @@ namespace LunarLander
         static bool IsTurningRight;
         static bool IsTurningLeft;
         static bool Restarted;
+
         static Scene Moon = new Scene(new(192, 108));
-        static Box Lander = new(new(4.3f, 5.5f));
+        static Box Lander = new(new(4.3f, 5.5f))
+        {
+            CollisionIndex = 1,
+        };
+        static Box Pad = new(new(8, 2)) { CollisionIndex = 0 };
         static Box Ground = new(new(Moon.Size.X, 30))
         {
+            CollisionIndex = 0,
             Position = new(Moon.Size.X / 2, Moon.Size.Y)
         };
         static MainWindow Window;
-        static Box Pad = new(new(8, 2));
-        static Box[] Colliders;
+        static Box[] Obstacles;
         static SceneDisplay Display;
         /// <summary>
         ///  The main entry point for the application.
@@ -84,29 +89,30 @@ namespace LunarLander
             Lander.AngularVelocity = 0;
             Lander.Angle = 0;
 
-            Colliders = new Box[(int)Moon.Size.X / 10 + 2];
-            for (int i = 0; i < Colliders.Length - 1; i++)
+            Obstacles = new Box[(int)Moon.Size.X / 10 + 1];
+            for (int i = 0; i < Obstacles.Length - 1; i++)
             {
-                Colliders[i] = new(new(Random.Shared.Next(10, 20), Random.Shared.Next(5, 30)))
+                Obstacles[i] = new(new(Random.Shared.Next(10, 20), Random.Shared.Next(5, 30)))
                 {
                     Position = new(Random.Shared.Next(i * 10, (i + 1) * 10), Random.Shared.Next(0, 10) + Moon.Size.Y - 15),
-                    Angle = Random.Shared.NextSingle() * MathF.PI
+                    Angle = Random.Shared.NextSingle() * MathF.PI,
+                    CollisionIndex = 0
                 };
             }
-            Colliders[Colliders.Length - 2] = Ground;
-            Colliders[Colliders.Length - 1] = Pad;
-            foreach (var m in Colliders)
+            Obstacles[Obstacles.Length - 1] = Ground;
+            foreach (var m in Obstacles)
             {
                 Moon.AddBox(m);
             }
 
+            Moon.Update(0);
+            Moon.Update(0);
             Line ray;
             while (!Moon.TryRayCast(
                 ray = new Line(
                     new(Random.Shared.Next(20, (int)Moon.Size.X - 20), 0),
                     Vector2.UnitY * 99999),
-                out Pad.Position)) ;
-
+                out Pad.Position, out _)) ;
             Moon.AddBox(Pad);
             Moon.AddBox(Lander);
             Restarted = true;
@@ -124,11 +130,11 @@ namespace LunarLander
                 Lander.AngularAcceleration = 0;
                 if (IsTurningLeft = Keyboard.IsKeyDown(Key.Left))
                 {
-                    Lander.AngularAcceleration += 0.2f;
+                    Lander.AngularAcceleration -= 0.2f;
                 }
                 if (IsTurningRight = Keyboard.IsKeyDown(Key.Right))
                 {
-                    Lander.AngularAcceleration -= 0.2f;
+                    Lander.AngularAcceleration += 0.2f;
                 }
                 Thread.Sleep(16);
             }
@@ -205,58 +211,75 @@ namespace LunarLander
                 gfx.ClearScene();
                 gfx.DrawText(_font, _whiteBrush, default, $"FPS: {1000 / e.DeltaTime}");
                 gfx.DrawText(_font, _whiteBrush, new(0, 30), $"Velocity: {Lander.Velocity.Length()}");
+                gfx.DrawText(_font, _whiteBrush, new(0, 90), $"Angle: {Lander.Angle}");
 
 
                 _scene.EnumSceneObjects(DrawBox, gfx);
 
+                // gfx.TransformStart(RotationTransform(-1, default));
+                // gfx.DrawLine(_boxBrush, default, new PointF(50, 0), 5);
+                // gfx.TransformEnd();
 
                 gfx.TransformStart(_scaleMatrix);
+                // var angle = e.FrameCount / 40f;
+                // var m = Matrix2x2.Rotation(angle);
+                // var off = new Vector2(50, 50);
+                // gfx.DrawCircle(_boxBrush, (m * new Vector2(0, 50) + off).ToPointF(), 2, 1);
+                // gfx.DrawCircle(_boxBrush, (m * new Vector2(0, -50) + off).ToPointF(), 2, 1);
+                // gfx.DrawCircle(_boxBrush, (m * new Vector2(50, 0) + off).ToPointF(), 2, 1);
+                // gfx.DrawCircle(_boxBrush, (m * new Vector2(-50, 0) + off).ToPointF(), 2, 1);
 
-
-                foreach (var m in Colliders)
+                bool collided = false;
+                Moon.EnumCollisionPairs((b1, b2) =>
                 {
-                    if (Lander.IsIntersectingWith(m))
+                    return !(collided = b1.IsIntersectingWith(b2));
+                });
+
+                if (collided)
+                {
+                    gfx.TransformEnd();
+                    if (Lander.Velocity.Length() < 3.5)
                     {
-                        gfx.TransformEnd();
-                        if (Lander.Velocity.Length() < 3.5)
-                        {
-                            var score = (3.5f - Lander.Velocity.Length()) * 150;
-                            score += Math.Max(10 - Lander.Position.DistanceTo(Pad.Position), 0) * 300;
-                            score = MathF.Truncate(score * 100) / 100;
-                            Message = $"Score: {score}, press Space to restart";
-                            _canvas.IsRunning = false;
-                        }
-                        else
-                        {
-                            Message = $"Game Over, press Space to restart";
-                            Explode();
-                        }
-                        gfx.DrawText(_font, _whiteBrush, new(0, 60), Message);
-                        gfx.EndScene();
-                        return;
+                        var score = (3.5f - Lander.Velocity.Length()) * 150;
+                        score += Math.Max(10 - Lander.Position.DistanceTo(Pad.Position), 0) * 300;
+                        score = MathF.Truncate(score * 100) / 100;
+                        Message = $"Score: {score}, press Space to restart";
+                        _canvas.IsRunning = false;
                     }
+                    else
+                    {
+                        Message = $"Game Over, press Space to restart";
+                        Explode();
+                    }
+                    gfx.DrawText(_font, _whiteBrush, new(0, 60), Message);
+                    gfx.EndScene();
+                    return;
                 }
 
 #if DEBUG
+                Message = Lander.Position.ToString();
 
-                Vector2 point = default;
 
                 var ray = new Line(Lander.Position - Lander.UpVector * 10, Lander.UpVector * -1000);
 
                 gfx.DrawLine(_fireBrush, ray, 1);
-                var hits = new List<Vector2>();
-                if (Moon.TryRayCast(ray, out point, hits))
+                var hits = new List<(Shape, Vector2)>();
+                if (Moon.TryRayCast(ray, out var hit, out _, hits))
                 {
-                    Message = $"{point} {hits.Count}";
-                    gfx.DrawCircle(_fireBrush, point.ToPointF(), 3, 1f);
+                    gfx.DrawCircle(_fireBrush, hit.ToPointF(), 3, 1f);
                 }
 
                 Moon.EnumSceneObjects((b) =>
                 {
-                    b.EnumEdges((e) =>
+                    if (b is Polygon p)
                     {
-                        gfx.DrawLine(_fireBrush, e, 1);
-                    });
+                        p.EnumEdges((e) =>
+                        {
+                            gfx.DrawLine(_fireBrush, e, 0.3f);
+                            gfx.DrawCircle(_fireBrush, b.Position.ToPointF(), 0, 2);
+                        });
+                    }
+                    return true;
                 });
 
                 gfx.DrawLine(_fireBrush, Lander.Project(Ground.XAxis), 0.5f);
@@ -286,7 +309,8 @@ namespace LunarLander
                         Position =
                         Random.Shared.Next(-5, 5) * Lander.UpVector * 0.2f +
                         Random.Shared.Next(-5, 5) * Lander.RightVector * 0.2f +
-                        Lander.Position
+                        Lander.Position,
+                        CollisionIndex = 0
                     };
                     d.Velocity = (d.Position - Lander.Position) * 20 * Random.Shared.NextSingle() + Lander.Velocity * 0.3f;
                     d.Acceleration = Gravity * 2;
@@ -303,9 +327,9 @@ namespace LunarLander
                 Lander.SetRemove();
             }
 
-            void DrawBox(Box b, Graphics gfx)
+            bool DrawBox(Box b, Graphics gfx)
             {
-                gfx.TransformStart(RotationTransform(b.Angle, b.Position) * _scaleMatrix);
+                gfx.TransformStart(RotationTransform(-b.Angle, b.Position) * _scaleMatrix);
 
                 if (b == Lander)
                 {
@@ -319,6 +343,7 @@ namespace LunarLander
                     gfx.DrawBox2D(brush, brush, new RectangleF(-hw, -hh, hw, hh), 0);
                 }
                 gfx.TransformEnd();
+                return true;
             }
 
             private void DrawLander(Box b, Graphics gfx)
@@ -353,9 +378,6 @@ namespace LunarLander
                     var fireWidth = Random.Shared.NextSingle() / 2;
                     gfx.FillTriangle(_fireBrush, new PointF(-hw, headPos.Y), new PointF(-hw - 2, headPos.Y + fireWidth), new PointF(-hw - 2, headPos.Y - fireWidth));
                 }
-#if DEBUG
-                 gfx.DrawBox2D(_debugBrush, _debugBrush, new RectangleF(-hw, -hh, hw, hh), 0.1f);
-#endif
             }
 
             static TransformationMatrix RotationTransform(float angel, Vector2 center)

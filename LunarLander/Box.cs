@@ -27,55 +27,38 @@ namespace LunarLander
 
         public static implicit operator SharpD2D.Drawing.Line(Line l) => new(l.X1, l.Y1, l.X2, l.Y2);
     }
-    public class Box
+    public class Box : Polygon
     {
-        public Vector2 Acceleration;
-        public float AngularAcceleration;
-        public float Angle;
-        public float AngularVelocity;
         public readonly Vector2 Size;
-        public Vector2 Position;
-        public Vector2 Velocity;
         public event Action PreUpdate;
         public event Action PostUpdate;
         internal bool Remove;
+        public int CollisionIndex = -1;
         public SharpD2D.Drawing.IBrush Brush;
         public void SetRemove()
         {
             Remove = true;
         }
 
-        public void EnumEdges(Action<Line> proc)
-        {
-            var up = UpVector * Size.Y;
-            var right = RightVector * Size.X;
-            proc(new(Position + (up - right) / 2, right));
-            proc(new(Position - (up + right) / 2, right));
-            proc(new(Position + (right - up) / 2, up));
-            proc(new(Position - (right + up) / 2, up));
-        }
-        public Box(Vector2 size) { Size = size; }
-        public Vector2 UpVector
-        {
-            get
-            {
-                var right = RightVector;
-                return new(right.Y, -right.X);
-            }
-        }
-        public Vector2 LeftVector
-            => -RightVector;
-        public Vector2 RightVector
-            => new((float)Math.Cos(Angle), -(float)Math.Sin(Angle));
+        public Box(Vector2 size) : base(
+            new Vector2[] {
+                new(-size.X/2,size.Y/2),
+                new(size.X/2,size.Y/2),
+                new(size.X/2,-size.Y/2),
+                new(-size.X/2,-size.Y/2)
+            })
+        { Size = size; }
         public Line XAxis;
         public Line YAxis;
-        internal void Update(float time)
+        internal override void Update(float time)
         {
             PreUpdate?.Invoke();
+            base.Update(time);
             Velocity += time * Acceleration;
             AngularVelocity += time * AngularAcceleration;
             Position += time * Velocity;
             Angle += time * AngularVelocity;
+            RotationMatrix = Matrix2x2.Rotation(Angle);
             XAxis.Start = YAxis.Start = Position;
             XAxis.Direction = RightVector;
             YAxis.Direction = UpVector;
