@@ -1,40 +1,16 @@
-﻿using PInvoke;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Media.Media3D;
 
-namespace LunarLander
+namespace BoxSharp
 {
-    public struct Line
-    {
-        public Line(Vector2 start, Vector2 dir)
-        {
-            Start = start;
-            Direction = dir;
-        }
-        public Vector2 Start;
-        public Vector2 Direction;
-        public Vector2 End => Start + Direction;
-        public float X1 => Start.X;
-        public float Y1 => Start.Y;
-        public float X2 => Start.X + Direction.X;
-        public float Y2 => Start.Y + Direction.Y;
-
-        public static implicit operator SharpD2D.Drawing.Line(Line l) => new(l.X1, l.Y1, l.X2, l.Y2);
-    }
-    public class Box : Polygon
+    public class Box<T> : Polygon<T>
     {
         public readonly Vector2 Size;
-        public event Action PreUpdate;
-        public event Action PostUpdate;
-        internal bool Remove;
-        public int CollisionIndex = -1;
-        public SharpD2D.Drawing.IBrush Brush;
         public void SetRemove()
         {
             Remove = true;
@@ -52,30 +28,12 @@ namespace LunarLander
         public Line YAxis;
         internal override void Update(float time)
         {
-            PreUpdate?.Invoke();
             base.Update(time);
-            Velocity += time * Acceleration;
-            AngularVelocity += time * AngularAcceleration;
-            Position += time * Velocity;
-            Angle += time * AngularVelocity;
-            RotationMatrix = Matrix2x2.Rotation(Angle);
             XAxis.Start = YAxis.Start = Position;
             XAxis.Direction = RightVector;
             YAxis.Direction = UpVector;
-            PostUpdate?.Invoke();
         }
-
-        public void ApplyVelocity(Vector2 increment)
-        {
-            Velocity += increment;
-        }
-
-        public void ApplyAngularVelocity(float increment)
-        {
-            AngularVelocity += increment;
-        }
-
-        public bool IsIntersectingWith(Box box)
+        public bool IsIntersectingWith(Box<T> box)
         {
             if (!ProjectionHitX(box.Project(XAxis)))
                 return false;

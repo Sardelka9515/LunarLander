@@ -7,15 +7,20 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace LunarLander
+namespace BoxSharp
 {
-    internal class Scene : IEnumerable<Box>
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <typeparam name="T">Type of tag to be appended for each objects</typeparam>
+    public class World<T> : IEnumerable<Shape<T>>
     {
         Thread _physicsThread;
         bool _stopping;
         int _curCollisionIndex = 0;
-        List<Box> _objects = new();
-        List<(Box, Box)> _collisionPairs;
+        readonly List<Shape<T>> _objects = new();
+        readonly IEnumerator<Shape<T>> _enumerator;
+        List<(Shape<T>, Shape<T>)> _collisionPairs;
         public float PhysicsFPS
         {
             get => 1 / _timeWarp;
@@ -23,8 +28,9 @@ namespace LunarLander
         }
         float _timeWarp = 1 / 60;
         public Vector2 Size { get; }
-        public Scene(Vector2 size)
+        public World(Vector2 size)
         {
+            _enumerator = _objects.GetEnumerator();
             Size = size;
         }
 
@@ -70,15 +76,15 @@ namespace LunarLander
         {
             _objects.Clear();
         }
-        public void AddBox(Box box)
+        public void Add(Shape<T> obj)
         {
-            if (box.CollisionIndex == -1)
-                box.CollisionIndex = _curCollisionIndex++;
-            _objects.Add(box);
+            if (obj.CollisionIndex == -1)
+                obj.CollisionIndex = _curCollisionIndex++;
+            _objects.Add(obj);
             _collisionPairs = null;
         }
 
-        public bool TryRayCast(Line ray, out Vector2 result, out Shape hit, List<(Shape, Vector2)> hits = null)
+        public bool TryRayCast(Line ray, out Vector2 result, out Shape<T> hit, List<(Shape<T>, Vector2)> hits = null)
         {
             result = default;
             hit = default;
@@ -90,9 +96,9 @@ namespace LunarLander
             {
                 hits.Clear();
             }
-            EnumSceneObjects((b) =>
+            EnumObjects((b) =>
             {
-                if (b is Polygon p)
+                if (b is Polygon<T> p)
                 {
                     p.EnumEdges((e) =>
                     {
@@ -124,7 +130,7 @@ namespace LunarLander
             return true;
         }
 
-        public void EnumCollisionPairs(Func<Box, Box, bool> proc)
+        public void EnumCollisionPairs(Func<Shape<T>, Shape<T>, bool> proc)
         {
             _collisionPairs ??= CalculateCollisionPairs();
             for (int i = 0; i < _collisionPairs.Count; i++)
@@ -134,7 +140,7 @@ namespace LunarLander
                     return;
             }
         }
-        public void EnumSceneObjects(Func<Shape, bool> proc)
+        public void EnumObjects(Func<Shape<T>, bool> proc)
         {
             for (int i = 0; i < _objects.Count; i++)
             {
@@ -143,7 +149,7 @@ namespace LunarLander
             }
         }
 
-        public void EnumSceneObjects<T>(Func<Box, T, bool> proc, T parameter)
+        public void EnumObjects<TParam>(Func<Shape<T>, TParam, bool> proc, TParam parameter)
         {
             for (int i = 0; i < _objects.Count; i++)
             {
@@ -152,9 +158,9 @@ namespace LunarLander
             }
         }
 
-        public List<(Box, Box)> CalculateCollisionPairs()
+        public List<(Shape<T>, Shape<T>)> CalculateCollisionPairs()
         {
-            var result = new List<(Box, Box)>();
+            var result = new List<(Shape<T>, Shape<T>)>();
             for (int i = 0; i < _objects.Count; i++)
             {
                 for (int j = i + 1; j < _objects.Count; j++)
@@ -168,7 +174,7 @@ namespace LunarLander
             return result;
         }
 
-        public IEnumerator<Box> GetEnumerator() => _objects.GetEnumerator();
+        public IEnumerator<Shape<T>> GetEnumerator() => _enumerator;
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }

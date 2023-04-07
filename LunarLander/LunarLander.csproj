@@ -12,4 +12,8 @@
 		<PackageReference Include="SharpD2D" Version="0.1.1.1" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <ProjectReference Include="..\BoxSharp\BoxSharp.csproj" />
+	</ItemGroup>
+
 </Project>

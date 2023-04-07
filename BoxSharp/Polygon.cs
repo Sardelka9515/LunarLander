@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Numerics;
 
-namespace LunarLander
+namespace BoxSharp
 {
-    public class Polygon : Shape
+    public class Polygon<T> : Shape<T>
     {
         public readonly Vector2[] LocalVertices;
         public readonly float[] LocalAxes;
@@ -38,8 +38,9 @@ namespace LunarLander
             WorldVertices = new Vector2[LocalVertices.Length];
         }
 
-        internal virtual void Update(float time)
+        internal override void Update(float time)
         {
+            base.Update(time);
             for (int i = 0; i < LocalVertices.Length; i++)
             {
                 WorldVertices[i] = RotationMatrix * LocalVertices[i] + Position;
@@ -61,7 +62,7 @@ namespace LunarLander
             proc(new(WorldVertices[len - 1], WorldVertices[0] - WorldVertices[len - 1]));
         }
 
-        public void IsColliding(Polygon p)
+        public void IsColliding(Polygon<T> p)
         {
             throw new NotImplementedException();
         }
