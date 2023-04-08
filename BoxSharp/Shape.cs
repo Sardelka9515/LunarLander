@@ -18,22 +18,40 @@ namespace BoxSharp
         public Vector2 RightVector => RotationMatrix * Vector2.UnitX;
 
         public Matrix2x2 RotationMatrix = Matrix2x2.Identity;
-        public Vector2 Acceleration;
         public float AngularAcceleration;
         public float Angle;
         public float AngularVelocity;
         public Vector2 Position;
         public Vector2 Velocity;
         public int CollisionIndex = -1;
+        public readonly float Mass;
+        public readonly float InverseMass;
+        public Vector2 Gravity;
+
         internal bool Remove;
+        Vector2 _acceleration;
+        Vector2 _force;
+        public Shape(float mass)
+        {
+            Mass = mass;
+            InverseMass = mass == 0 ? 0 : 1 / mass;
+        }
+        
+        public void ApplyForce(Vector2 f)
+        {
+            _force += f;
+        }
 
         internal virtual void Update(float time)
         {
             AngularVelocity += time * AngularAcceleration;
             Angle += time * AngularVelocity;
             RotationMatrix = Matrix2x2.Rotation(Angle);
-            Velocity += time * Acceleration;
+            ApplyForce(Gravity * Mass);
+            _acceleration = _force * InverseMass;
+            Velocity += time * _acceleration;
             Position += time * Velocity;
+            _force = default;
         }
         public void SetRemove()
         {

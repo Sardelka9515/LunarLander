@@ -12,6 +12,40 @@ namespace BoxSharp
 {
     public static class Extensions
     {
+        public static float GetPolygonArea(Vector2[] vertices)
+        {
+            float area = 0;
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                var j = (i + 1) % vertices.Length;
+                area += vertices[i].CrossProduct(vertices[j]);
+            }
+            return MathF.Abs(area) / 2;
+        }
+
+        // Two crossed vectors return a scalar 
+        public static float CrossProduct(this Vector2 a, Vector2 b)
+        {
+            return a.X * b.Y - a.Y * b.X;
+        }
+        // More exotic (but necessary) forms of the cross product 
+        // with a vector a and scalar s, both returning a vector 
+        public static Vector2 CrossProduct(this Vector2 a, float s)
+        {
+            return new(s * a.Y, -s * a.X);
+        }
+        public static Vector2 CrossProduct(this float s, Vector2 a)
+        {
+            return new(-s * a.Y, s * a.X);
+        }
+
+
+        public static float DotProduct(this Vector2 a, Vector2 b)
+        {
+            return a.X * b.X + a.Y * b.Y;
+        }
+
+
         public static Vector2 Project(this Vector2 from, Line to)
         {
             var dotValue = to.Direction.X * (from.X - to.Start.X) + to.Direction.Y * (from.Y - to.Start.Y);
