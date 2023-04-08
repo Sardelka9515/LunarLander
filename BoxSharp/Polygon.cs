@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Numerics;
+using System.Reflection.Metadata;
 
 namespace BoxSharp
 {
@@ -24,18 +25,22 @@ namespace BoxSharp
                 throw new ArgumentException("Invalid polygon shape", nameof(vertices));
 
             LocalVertices = vertices;
-            List<float> tmpVts = new(vertices.Length);
-            for (int i = 1; i < vertices.Length; i++)
-            {
-                var dir = vertices[i] - vertices[i - 1];
-                var angle = MathF.Atan2(dir.Y, dir.X);
-                // Skip axes with similar angle
-                if (!tmpVts.Any(x => Math.Abs(x - angle) < 0.001))
-                    tmpVts.Add(angle);
-            }
-            LocalAxes = tmpVts.ToArray();
-            WorldAxes = new float[LocalAxes.Length];
             WorldVertices = new Vector2[LocalVertices.Length];
+            List<float> angles = new(vertices.Length);
+            EnumEdges(LocalVertices, (l) =>
+            {
+                var dir = l.Direction;
+                // Flip vector to same direction
+                if (dir.X < 0 || (dir.X == 0 && dir.Y < 0))
+                    dir = -dir;
+                // Projection along the edge, so the axis is perpendicular to the edge
+                var angle = MathF.Atan2(dir.X, -dir.Y);
+                // Skip axes with similar angle
+                if (!angles.Any(x => MathF.Abs(x - angle) < 0.0001f))
+                    angles.Add(angle);
+            });
+            LocalAxes = angles.ToArray();
+            WorldAxes = new float[LocalAxes.Length];
         }
 
         internal override void Update(float time)
@@ -52,19 +57,58 @@ namespace BoxSharp
         }
 
         public void EnumEdges(Action<Line> proc)
+            => EnumEdges(WorldVertices, proc);
+
+        public static void EnumEdges(Vector2[] vertices, Action<Line> proc)
         {
-            var len = WorldVertices.Length;
+            var len = vertices.Length;
             for (int i = 1; i < len; i++)
             {
-                proc(new(WorldVertices[i - 1], WorldVertices[i] - WorldVertices[i - 1]));
+                proc(new(vertices[i - 1], vertices[i] - vertices[i - 1]));
             }
-            // Last to first
-            proc(new(WorldVertices[len - 1], WorldVertices[0] - WorldVertices[len - 1]));
+            // Closing side
+            proc(new(vertices[len - 1], vertices[0] - vertices[len - 1]));
         }
 
-        public void IsColliding(Polygon<T> p)
+        public unsafe bool IsIntersectingWith(Polygon<T> p)
         {
-            throw new NotImplementedException();
+            if (HasGap(WorldAxes, this, p))
+                return false;
+
+            if (HasGap(p.WorldAxes, this, p))
+                return false;
+
+            return true;
+        }
+
+        public static bool HasGap(float[] axes, Polygon<T> p1, Polygon<T> p2)
+        {
+            float low1, low2, high1, high2;
+            for (int i = 0; i < axes.Length; i++)
+            {
+                // Get a reverse transformation matrix for projection
+                var tm = Matrix2x2.Rotation(-axes[i]);
+                p1.Project(ref tm, out low1, out high1);
+                p2.Project(ref tm, out low2, out high2);
+                if (low1 > high2 || high1 < low2)
+                    return true;
+            }
+            return false;
+        }
+
+
+        /// <summary>
+        /// Project the shape to specified axis and get a 1 dimension shadow (two points)
+        /// </summary>
+        public void Project(ref Matrix2x2 tm, out float low, out float high)
+        {
+            low = high = tm.TransformX(WorldVertices[0]);
+            for (int i = 1; i < WorldVertices.Length; i++)
+            {
+                var point = tm.TransformX(WorldVertices[i]);
+                if (point < low) low = point;
+                else if (point > high) high = point;
+            }
         }
     }
 }

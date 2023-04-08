@@ -35,6 +35,17 @@ namespace BoxSharp
             return 1 / GetDeterminant() * new Matrix2x2(M22, -M12, -M21, M11);
         }
 
+        public float TransformX(Vector2 v)
+        {
+            return v.X * M11 + v.Y * M12;
+        }
+
+
+        public float TransformY(Vector2 v)
+        {
+            return v.X * M21 + v.Y * M22;
+        }
+
         public static Matrix2x2 Rotation(float angle)
         {
             var s = MathF.Sin(angle);

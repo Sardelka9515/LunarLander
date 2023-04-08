@@ -33,6 +33,7 @@ namespace BoxSharp
             XAxis.Direction = RightVector;
             YAxis.Direction = UpVector;
         }
+        /*
         public bool IsIntersectingWith(Box<T> box)
         {
             if (!ProjectionHitX(box.Project(XAxis)))
@@ -108,5 +109,6 @@ namespace BoxSharp
             }
             return new Line(high, low - high);
         }
+        */
     }
 }
