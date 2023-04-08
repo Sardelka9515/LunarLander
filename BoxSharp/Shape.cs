@@ -29,11 +29,11 @@ namespace BoxSharp
 
         internal virtual void Update(float time)
         {
+            Angle += time * AngularVelocity;
+            RotationMatrix = Matrix2x2.Rotation(Angle);
             Velocity += time * Acceleration;
             AngularVelocity += time * AngularAcceleration;
             Position += time * Velocity;
-            Angle += time * AngularVelocity;
-            RotationMatrix = Matrix2x2.Rotation(Angle);
         }
         public void SetRemove()
         {

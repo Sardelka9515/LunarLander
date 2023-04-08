@@ -127,7 +127,6 @@ namespace LunarLander
             }
 
             Moon.Update(0);
-            Moon.Update(0);
             BoxSharp.Line ray;
             while (!Moon.TryRayCast(
                 ray = new BoxSharp.Line(
