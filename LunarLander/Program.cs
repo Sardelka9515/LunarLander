@@ -61,8 +61,8 @@ namespace LunarLander
             {
                 if (e.KeyCode == Keys.Space)
                 {
-                    GameSetup();
                     Display.Stop();
+                    GameSetup();
                     Display.Start();
                 }
                 else if (e.KeyCode == Keys.F11)
