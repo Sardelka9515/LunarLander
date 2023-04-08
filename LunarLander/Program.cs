@@ -189,6 +189,7 @@ namespace LunarLander
             public void Stop()
             {
                 _canvas.FPS = 0;
+                _canvas.Join();
             }
             IBrush _debugBrush;
             IBrush _landerBrush;

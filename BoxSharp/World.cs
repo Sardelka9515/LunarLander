@@ -158,6 +158,11 @@ namespace BoxSharp
             }
         }
 
+        /// <summary>
+        /// Call this method after you made change to collision index of an object
+        /// </summary>
+        public void RecalculateCollisionPairs() => _collisionPairs = CalculateCollisionPairs();
+
         public List<(Shape<T>, Shape<T>)> CalculateCollisionPairs()
         {
             var result = new List<(Shape<T>, Shape<T>)>();

@@ -98,7 +98,7 @@ namespace BoxSharp
 
 
         /// <summary>
-        /// Project the shape using specified transformation matrix and get a 1 dimension shadow (two points)
+        /// Project the shape using specified transformation matrix and get the shadow on x axis (two points)
         /// </summary>
         public void Project(ref Matrix2x2 tm, out float low, out float high)
         {
