@@ -146,17 +146,17 @@ namespace LunarLander
                 var a = Gravity;
                 if (IsGoingUp = Keyboard.IsKeyDown(Key.Up))
                 {
-                    a += 5 * Lander.UpVector;
+                    a += 3 * Lander.UpVector;
                 }
                 Lander.Acceleration = a;
                 Lander.AngularAcceleration = 0;
                 if (IsTurningLeft = Keyboard.IsKeyDown(Key.Left))
                 {
-                    Lander.AngularAcceleration -= 0.4f;
+                    Lander.AngularAcceleration -= 0.2f;
                 }
                 if (IsTurningRight = Keyboard.IsKeyDown(Key.Right))
                 {
-                    Lander.AngularAcceleration += 0.4f;
+                    Lander.AngularAcceleration += 0.2f;
                 }
                 Thread.Sleep(16);
             }
