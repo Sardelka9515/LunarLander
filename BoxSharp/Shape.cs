@@ -35,5 +35,9 @@ namespace BoxSharp
             Angle += time * AngularVelocity;
             RotationMatrix = Matrix2x2.Rotation(Angle);
         }
+        public void SetRemove()
+        {
+            Remove = true;
+        }
     }
 }

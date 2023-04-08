@@ -36,7 +36,7 @@ namespace BoxSharp
                 // Projection along the edge, so the axis is perpendicular to the edge
                 var angle = MathF.Atan2(dir.X, -dir.Y);
                 // Skip axes with similar angle
-                if (!angles.Any(x => MathF.Abs(x - angle) < 0.0001f))
+                if (!angles.Any(x => MathF.Abs(x - angle) < 0.00001f))
                     angles.Add(angle);
             });
             LocalAxes = angles.ToArray();
@@ -98,7 +98,7 @@ namespace BoxSharp
 
 
         /// <summary>
-        /// Project the shape to specified axis and get a 1 dimension shadow (two points)
+        /// Project the shape using specified transformation matrix and get a 1 dimension shadow (two points)
         /// </summary>
         public void Project(ref Matrix2x2 tm, out float low, out float high)
         {
