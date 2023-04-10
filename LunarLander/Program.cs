@@ -160,11 +160,13 @@ namespace LunarLander
         }
         static void Control()
         {
+#if !TEST
             if (FuelLevel <= 0)
             {
                 IsGoingUp = IsTurningLeft = IsTurningRight = false;
                 return;
             }
+#endif
             if (IsGoingUp = IsKeyDown(Key.Up))
             {
                 FuelLevel -= 0.0005f;
