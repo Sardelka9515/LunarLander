@@ -1,5 +1,7 @@
-﻿using System;
+﻿global using static BoxSharp.Extensions;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -12,16 +14,73 @@ namespace BoxSharp
 {
     public static class Extensions
     {
-        public static float GetPolygonArea(Vector2[] vertices)
+        public struct Face { public Vector2 start; public Vector2 end; }
+        public const float EPSILON = 0.0001f;
+        public static Vector2 EdgeNormal(Vector2 dir) => new(-dir.Y, dir.X);
+        public static bool Equals(float a, float b) => MathF.Abs(a - b) <= EPSILON;
+        public static float Squared(float value) => value * value;
+        public static unsafe int Clip(Vector2 n, float c, ref Face face)
         {
-            float area = 0;
-            for (int i = 0; i < vertices.Length; i++)
+            int sp = 0;
+            var result = stackalloc Vector2[2] {
+                face.start,
+                face.end
+            };
+
+            // Retrieve distances from each endpoint to the line
+            // d = ax + by - c
+            var d1 = n.DotProduct(face.start) - c;
+            var d2 = n.DotProduct(face.end) - c;
+
+            // If negative (behind plane) clip
+            if (d1 <= 0.0f) result[sp++] = face.start;
+            if (d2 <= 0.0f) result[sp++] = face.end;
+
+            // If the points are on different sides of the plane
+            if (d1 * d2 < 0.0f) // less than to ignore -0.0f
             {
-                var j = (i + 1) % vertices.Length;
-                area += vertices[i].CrossProduct(vertices[j]);
+                // Push intersection point
+                var alpha = d1 / (d1 - d2);
+                result[sp] = face.start + alpha * (face.end - face.start);
+                ++sp;
             }
-            return MathF.Abs(area) / 2;
+
+            // Assign our new converted values
+            face.start = result[0];
+            face.end = result[1];
+
+            Debug.Assert(sp != 3);
+
+            return sp;
         }
+        public static unsafe void FindIncidentFace<T>(ref Face face, Polygon<T> RefPoly, Polygon<T> IncPoly, int referenceIndex)
+        {
+            var referenceNormal = RefPoly.EdgeNormals[referenceIndex].world;
+
+            // Find most anti-normal face on incident polygon
+            int incidentFace = 0;
+            float minDot = float.MaxValue;
+            for (int i = 0; i < IncPoly.WorldVertices.Length; ++i)
+            {
+                var dot = referenceNormal.DotProduct(IncPoly.EdgeNormals[i].world);
+                if (dot < minDot)
+                {
+                    minDot = dot;
+                    incidentFace = i;
+                }
+            }
+            IncPoly.GetEdge(incidentFace, out face.start, out face.end);
+        }
+
+        public static bool BiasGreaterThan(float a, float b)
+        {
+            const float k_biasRelative = 0.95f;
+            const float k_biasAbsolute = 0.01f;
+            return a >= b * k_biasRelative + a * k_biasAbsolute;
+        }
+
+        public static float MixFriction(float a, float b)
+            => MathF.Sqrt(a * b);
 
         // Two crossed vectors return a scalar 
         public static float CrossProduct(this Vector2 a, Vector2 b)
@@ -107,15 +166,6 @@ namespace BoxSharp
         public static bool IsBetween(this float a, float b, float c)
         {
             return (c < a && a < b) || (b < a && a < c);
-        }
-
-        // Returns true if given point(x,y) is inside the given line segment
-        private static bool IsInsideLine(Line line, double x, double y)
-        {
-            return (x >= line.X1 && x <= line.X2
-                        || x >= line.X2 && x <= line.X1)
-                   && (y >= line.X1 && y <= line.X2
-                        || y >= line.X1 && y <= line.X2);
         }
     }
 }

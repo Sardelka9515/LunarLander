@@ -7,8 +7,14 @@ using System.Threading.Tasks;
 
 namespace BoxSharp
 {
+    public enum ShapeType
+    {
+        Polygon
+    }
     public abstract class Shape<T>
     {
+        public abstract ShapeType Type { get; }
+
         public T Tag;
 
         // Left-handed coordinate system, so up is negative
@@ -24,22 +30,31 @@ namespace BoxSharp
         public Vector2 Position;
         public Vector2 Velocity;
         public int CollisionIndex = -1;
-        public readonly float Mass;
-        public readonly float InverseMass;
+        public float Mass => _mass;
+
+        public float Restitution = 0.2f;
+        public float StaticFriction = 0.6f;
+        public float DynamicFriction = 0.4f;
+        public float Inertia => _inertia;
         public Vector2 Gravity;
 
         internal bool Remove;
-        Vector2 _acceleration;
-        Vector2 _force;
-        public Shape(float mass)
-        {
-            Mass = mass;
-            InverseMass = mass == 0 ? 0 : 1 / mass;
-        }
-        
+        internal Vector2 _acceleration;
+        internal Vector2 _force;
+        internal float _inertia;
+        internal float _inverseInertia;
+        internal float _mass;
+        internal float _inverseMass;
+
         public void ApplyForce(Vector2 f)
         {
             _force += f;
+        }
+
+        public void ApplyImpulse(Vector2 impulse, Vector2 contactVector)
+        {
+            Velocity += _inverseMass * impulse;
+            AngularVelocity += _inverseInertia * contactVector.CrossProduct(impulse);
         }
 
         internal virtual void Update(float time)
@@ -47,8 +62,8 @@ namespace BoxSharp
             AngularVelocity += time * AngularAcceleration;
             Angle += time * AngularVelocity;
             RotationMatrix = Matrix2x2.Rotation(Angle);
-            ApplyForce(Gravity * Mass);
-            _acceleration = _force * InverseMass;
+            ApplyForce(Gravity * _mass);
+            _acceleration = _force * _inverseMass;
             Velocity += time * _acceleration;
             Position += time * Velocity;
             _force = default;

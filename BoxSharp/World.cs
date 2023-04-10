@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Text;
@@ -15,12 +16,13 @@ namespace BoxSharp
     /// <typeparam name="T">Type of tag to be appended for each objects</typeparam>
     public class World<T> : IEnumerable<Shape<T>>
     {
+        public event Action<Manifold<T>> OnCollision;
         Thread _physicsThread;
         bool _stopping;
         int _curCollisionIndex = 0;
         readonly List<Shape<T>> _objects = new();
         readonly IEnumerator<Shape<T>> _enumerator;
-        List<(Shape<T>, Shape<T>)> _collisionPairs;
+        Manifold<T> _manifold = new();
         public float PhysicsFPS
         {
             get => 1 / _timeWarp;
@@ -50,7 +52,6 @@ namespace BoxSharp
 
         public void Update(float timeWarp)
         {
-            _collisionPairs ??= CalculateCollisionPairs();
             for (int i = 0; i < _objects.Count;)
             {
                 _objects[i].Update(timeWarp);
@@ -64,6 +65,24 @@ namespace BoxSharp
                     i++;
                 }
             }
+
+            // Resolve collisions
+            EnumCollisionPairs(ResolveCollision);
+        }
+        List<Manifold<T>> _collisions = new();
+        bool ResolveCollision(Shape<T> A,Shape<T> B)
+        {
+            _manifold.A = A;
+            _manifold.B = B;
+            _manifold.Solve();
+            if (_manifold.contactCount > 0)
+            {
+                _manifold.MixMaterials();
+                _manifold.ApplyImpulse();
+                _manifold.PositionalCorrection();
+                OnCollision?.Invoke(_manifold);
+            }
+            return true;
         }
 
         public void Stop()
@@ -81,7 +100,6 @@ namespace BoxSharp
             if (obj.CollisionIndex == -1)
                 obj.CollisionIndex = _curCollisionIndex++;
             _objects.Add(obj);
-            _collisionPairs = null;
         }
 
         public bool TryRayCast(Line ray, out Vector2 result, out Shape<T> hit, List<(Shape<T>, Vector2)> hits = null)
@@ -130,16 +148,6 @@ namespace BoxSharp
             return true;
         }
 
-        public void EnumCollisionPairs(Func<Shape<T>, Shape<T>, bool> proc)
-        {
-            _collisionPairs ??= CalculateCollisionPairs();
-            for (int i = 0; i < _collisionPairs.Count; i++)
-            {
-                var p = _collisionPairs[i];
-                if (!proc(p.Item1, p.Item2))
-                    return;
-            }
-        }
         public void EnumObjects(Func<Shape<T>, bool> proc)
         {
             for (int i = 0; i < _objects.Count; i++)
@@ -158,14 +166,9 @@ namespace BoxSharp
             }
         }
 
-        /// <summary>
-        /// Call this method after you made change to collision index of an object
-        /// </summary>
-        public void RecalculateCollisionPairs() => _collisionPairs = CalculateCollisionPairs();
-
-        public List<(Shape<T>, Shape<T>)> CalculateCollisionPairs()
+        public void EnumCollisionPairs(Func<Shape<T>, Shape<T>, bool> proc)
         {
-            var result = new List<(Shape<T>, Shape<T>)>();
+
             for (int i = 0; i < _objects.Count; i++)
             {
                 for (int j = i + 1; j < _objects.Count; j++)
@@ -173,10 +176,12 @@ namespace BoxSharp
                     var b1 = _objects[i];
                     var b2 = _objects[j];
                     if (b1.CollisionIndex != b2.CollisionIndex)
-                        result.Add((b1, b2));
+                    {
+                        if (!proc(b1,b2))
+                            return;
+                    }
                 }
             }
-            return result;
         }
 
         public IEnumerator<Shape<T>> GetEnumerator() => _enumerator;
