@@ -210,18 +210,18 @@ namespace LunarLander
                 {
                     if (m.intensity > 3.5)
                     {
-                        Message = $"Game Over, press Space to restart";
-                        _stopped = true;
                         Explode();
                     }
                 }
 #if DEBUG
+                _gfx.TransformStart(_scaleMatrix);
                 foreach (var c in m.contacts)
                 {
                     _gfx.DrawCircle(_purpleBrush, c.ToPointF(), 0.2f, 0.5f);
                     _gfx.DrawLine(_whiteBrush, c.ToPointF(), (c + m.normal).ToPointF(), 0.3f);
                 }
                 _gfx.DrawLine(_purpleBrush, m.incidentFace.start.ToPointF(), m.incidentFace.end.ToPointF(), 0.5f);
+                _gfx.TransformEnd();
 #endif
             }
             protected override void OnHandleCreated(EventArgs e)
@@ -288,10 +288,12 @@ namespace LunarLander
                 {
                     _scale = currentSize.Width / _scene.Size.X;
                 }
-                _scene.Update(1.0f / _canvas.FPS);
                 _scaleMatrix = new TransformationMatrix(_scale, 0, 0, _scale, 0, 0);
                 gfx.BeginScene();
                 gfx.ClearScene();
+                _scene.Update(1.0f / _canvas.FPS);
+                if (!_stopped && !Lander.Position.X.IsBetween(0, Moon.Size.X) || !Lander.Position.Y.IsBetween(-20, Moon.Size.Y))
+                    Explode();
                 gfx.DrawText(_font, _whiteBrush, default, $"FPS: {1000 / e.DeltaTime}");
                 gfx.DrawText(_font, _whiteBrush, new(0, 30), $"Velocity: {Lander.Velocity.Length()}");
                 gfx.DrawText(_font, _whiteBrush, new(0, 90), $"Fuel: {FuelLevel}");
@@ -367,6 +369,8 @@ namespace LunarLander
 
             private void Explode()
             {
+                Message = $"Game Over, press Space to restart";
+                _stopped = true;
                 var dc = Random.Shared.Next(40, 60);
                 for (int i = 0; i < dc; i++)
                 {
