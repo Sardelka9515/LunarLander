@@ -175,12 +175,12 @@ namespace LunarLander
             if (IsTurningLeft = IsKeyDown(Key.Left))
             {
                 FuelLevel -= 0.0001f;
-                Lander.ApplyImpulse(Torque * Lander.LeftVector, 1.5f * Lander.UpVector);
+                Lander.ApplyImpulse(Torque * Lander.LeftVector, 3f * Lander.UpVector);
             }
             if (IsTurningRight = IsKeyDown(Key.Right))
             {
                 FuelLevel -= 0.0001f;
-                Lander.ApplyImpulse(Torque * Lander.RightVector, 1.5f * Lander.UpVector);
+                Lander.ApplyImpulse(Torque * Lander.RightVector, 3f * Lander.UpVector);
             }
         }
 
@@ -303,7 +303,7 @@ namespace LunarLander
 
                 _scene.EnumObjects(DrawBox, gfx);
                 gfx.TransformStart(_scaleMatrix);
-                if (Lander.Position != default && MathF.Abs(Lander.Angle) < 0.05f && Lander.Velocity.Length() < 0.05f && Lander.IsIntersectingWith(Pad))
+                if (Lander.Position != default && MathF.Abs(Lander.Angle) < 0.05f && Lander.Velocity.Length() < 0.05f && Lander.IsTouching(Pad))
                 {
                     var score = FuelLevel * 700;
                     score += Math.Max(6 - Lander.Position.DistanceTo(Pad.Position), 0) * 300;
@@ -410,7 +410,7 @@ namespace LunarLander
                 {
                     var brush = p.Tag.Brush ?? (p == Pad ? _whiteBrush : _boxBrush);
 #if DEBUG
-                    if (p.IsIntersectingWith(Lander))
+                    if (p.IsTouching(Lander))
                         brush = _fireBrush;
 #endif
                     Geometry geo = p.Tag.Geometry;

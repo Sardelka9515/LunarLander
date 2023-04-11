@@ -98,7 +98,7 @@ namespace BoxSharp
             return new(-s * a.Y, s * a.X);
         }
 
-
+        public static float ToAngle(this Vector2 a) => MathF.Atan2(a.Y, a.X);
         public static float DotProduct(this Vector2 a, Vector2 b)
         {
             return a.X * b.X + a.Y * b.Y;

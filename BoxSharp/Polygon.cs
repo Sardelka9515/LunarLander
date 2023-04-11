@@ -227,7 +227,7 @@ namespace BoxSharp
         /// </summary>
         /// <param name="p"></param>
         /// <returns></returns>
-        public unsafe bool IsIntersectingWith(Polygon<T> p)
+        public unsafe bool IsTouching(Polygon<T> p)
         {
             if (HasGap(Axes, this, p))
                 return false;
