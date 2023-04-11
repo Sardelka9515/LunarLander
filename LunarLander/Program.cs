@@ -1,4 +1,4 @@
-// #define TEST
+#define TEST
 using SharpD2D;
 using SharpD2D.Drawing;
 using SharpD2D.Windows;
@@ -206,6 +206,7 @@ namespace LunarLander
             Graphics _gfx;
             void OnCollision(Manifold m)
             {
+#if !TEST
                 if (m.A == Lander || m.B == Lander)
                 {
                     if (m.intensity > 3.5)
@@ -213,6 +214,7 @@ namespace LunarLander
                         Explode();
                     }
                 }
+#endif
 #if DEBUG
                 _gfx.TransformStart(_scaleMatrix);
                 foreach (var c in m.contacts)
@@ -341,11 +343,10 @@ namespace LunarLander
                             var l = new BoxSharp.Line((v1 + v2) / 2, normal);
                             gfx.DrawLine(_fireBrush, l.ToLine(), 0.2f);
                         }
-                        for (int i = 0; i < p.WorldAxes.Length; i++)
+                        for (int i = 0; i < p.Axes.Length; i++)
                         {
-                            var angle = p.WorldAxes[i];
-                            var dir = new Vector2(MathF.Cos(angle), MathF.Sin(angle));
-                            // gfx.DrawLine(_whiteBrush, p.Position.ToPointF(), (p.Position + dir * 10).ToPointF(), 0.2f);
+                            var dir = p.Axes[i].world;
+                            gfx.DrawLine(_whiteBrush, p.Position.ToPointF(), (p.Position + dir * 10).ToPointF(), 0.2f);
                         }
                         // gfx.DrawCircle(_fireBrush, p.GetSupport(Vector2.UnitY).ToPointF(), 0, 2);
                     }

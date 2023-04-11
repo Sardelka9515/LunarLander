@@ -15,8 +15,7 @@ namespace BoxSharp
 
         public readonly Vector2[] LocalVertices;
         public readonly Vector2[] WorldVertices;
-        public readonly float[] LocalAxes;
-        public readonly float[] WorldAxes;
+        public readonly VecTuple[] Axes;
         public readonly VecTuple[] EdgeNormals;
 
         /// <param name="vertices">
@@ -30,24 +29,24 @@ namespace BoxSharp
             LocalVertices = vertices;
             WorldVertices = new Vector2[LocalVertices.Length];
             EdgeNormals = new VecTuple[LocalVertices.Length];
-            List<float> axes = new(vertices.Length);
+            List<VecTuple> axes = new(vertices.Length);
             int i = 0;
             EnumEdges(LocalVertices, (l) =>
             {
-                EdgeNormals[i].local = Vector2.Normalize(new(-l.Direction.Y, l.Direction.X));
-                var dir = l.Direction;
+                var dir = EdgeNormals[i].local = Vector2.Normalize(new(-l.Direction.Y, l.Direction.X));
+
                 // Flip vector to same direction
                 if (dir.X < 0 || (dir.X == 0 && dir.Y < 0))
                     dir = -dir;
-                // Projection along the edge, so the axis is perpendicular to the edge
-                var angle = MathF.Atan2(dir.X, -dir.Y);
+
+                var angle = MathF.Atan2(dir.Y, dir.X);
+
                 // Skip axes with similar angle
-                if (!axes.Any(x => MathF.Abs(x - angle) < EPSILON))
-                    axes.Add(angle);
+                if (!axes.Any(x => MathF.Abs(MathF.Atan2(x.local.Y, x.local.X) - angle) < EPSILON))
+                    axes.Add(new(dir, default));
                 i++;
             });
-            LocalAxes = axes.ToArray();
-            WorldAxes = new float[LocalAxes.Length];
+            Axes = axes.ToArray();
             ComputeMass(density);
         }
 
@@ -58,9 +57,9 @@ namespace BoxSharp
             {
                 WorldVertices[i] = RotationMatrix * LocalVertices[i] + Position;
             }
-            for (int i = 0; i < LocalAxes.Length; i++)
+            for (int i = 0; i < Axes.Length; i++)
             {
-                WorldAxes[i] = LocalAxes[i] + Angle;
+                Axes[i].world = RotationMatrix * Axes[i].local;
             }
             for (int i = 0; i < EdgeNormals.Length; i++)
             {
@@ -114,7 +113,7 @@ namespace BoxSharp
             int bestIndex = 0;
             float bestDistance = float.MinValue;
             Vector2 sunkContact = default;
-            for(int i = 0; i < A.EdgeNormals.Length; i++)
+            for (int i = 0; i < A.EdgeNormals.Length; i++)
             {
                 // Retrieve a face normal from A 
                 Vector2 n = A.EdgeNormals[i].world;
@@ -123,7 +122,7 @@ namespace BoxSharp
                 // Retrieve vertex on face from A
                 Vector2 v = A.WorldVertices[i];
                 // Compute penetration distance
-                float d = n.DotProduct(s-v);
+                float d = n.DotProduct(s - v);
                 // Store greatest distance 
                 if (d > bestDistance)
                 {
@@ -142,22 +141,6 @@ namespace BoxSharp
             start = WorldVertices[index];
             end = WorldVertices[++index >= WorldVertices.Length ? 0 : index];
         }
-
-        public bool IsIntersectingWith(Polygon<T> p)
-        {
-            // Check for a separating axis with A's face planes
-            float penetrationA = FindPenetration(out _, this, p, out _);
-            if (penetrationA >= 0.0f)
-                return false;
-
-            // Check for a separating axis with B's face planes
-            float penetrationB = FindPenetration(out _, p, this, out _);
-            if (penetrationB >= 0.0f)
-                return false;
-
-            return true;
-        }
-
 
         void ComputeMass(float density)
         {
@@ -203,6 +186,24 @@ namespace BoxSharp
         {
             _mass = _inverseMass = _inertia = _inverseInertia = 0;
         }
+
+        /*
+        private bool IsIntersectingWith(Polygon<T> p)
+        {
+            // Check for a separating axis with A's face planes
+            float penetrationA = FindPenetration(out _, this, p, out _);
+            if (penetrationA >= 0.0f)
+                return false;
+
+            // Check for a separating axis with B's face planes
+            float penetrationB = FindPenetration(out _, p, this, out _);
+            if (penetrationB >= 0.0f)
+                return false;
+
+            return true;
+        }
+        */
+
         #region SAT
 
         /// <summary>
@@ -210,26 +211,25 @@ namespace BoxSharp
         /// </summary>
         /// <param name="p"></param>
         /// <returns></returns>
-        public unsafe bool IsIntersectingWith_SAT(Polygon<T> p)
+        public unsafe bool IsIntersectingWith(Polygon<T> p)
         {
-            if (HasGap(WorldAxes, this, p))
+            if (HasGap(Axes, this, p))
                 return false;
 
-            if (HasGap(p.WorldAxes, this, p))
+            if (HasGap(p.Axes, this, p))
                 return false;
 
             return true;
         }
 
-        public static bool HasGap(float[] axes, Polygon<T> p1, Polygon<T> p2)
+        public static bool HasGap(VecTuple[] axes, Polygon<T> p1, Polygon<T> p2)
         {
             float low1, low2, high1, high2;
             for (int i = 0; i < axes.Length; i++)
             {
-                // Get a reverse transformation matrix for projection
-                var tm = Matrix2x2.Rotation(-axes[i]);
-                p1.Project(ref tm, out low1, out high1);
-                p2.Project(ref tm, out low2, out high2);
+                var axis = axes[i].world;
+                p1.Project(axis, out low1, out high1);
+                p2.Project(axis, out low2, out high2);
                 if (low1 > high2 || high1 < low2)
                     return true;
             }
@@ -240,12 +240,18 @@ namespace BoxSharp
         /// <summary>
         /// Project the shape using specified transformation matrix and get the shadow on x axis (two points)
         /// </summary>
-        public void Project(ref Matrix2x2 tm, out float low, out float high)
+        public void Project(Vector2 axis, out float low, out float high)
         {
-            low = high = tm.TransformX(WorldVertices[0]);
+            // Do reverse half matrix transformation to rotate it back to align with x axis
+            // so we can just take the x coordinate
+            float transformX(Vector2 v)
+            {
+                return axis.X * v.X + axis.Y * v.Y;
+            }
+            low = high = transformX(WorldVertices[0]);
             for (int i = 1; i < WorldVertices.Length; i++)
             {
-                var point = tm.TransformX(WorldVertices[i]);
+                var point = transformX(WorldVertices[i]);
                 if (point < low) low = point;
                 else if (point > high) high = point;
             }
