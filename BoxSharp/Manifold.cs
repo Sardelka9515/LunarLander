@@ -116,7 +116,7 @@ namespace BoxSharp
 
         public void PositionalCorrection()
         {
-            const float k_slop = 0.05f; // Penetration allowance
+            const float k_slop = 0.02f; // Penetration allowance
             const float percent = 0.4f; // Penetration percentage to correct
             var correction = (MathF.Max(penetration - k_slop, 0.0f) / (A._inverseMass + B._inverseMass)) * normal * percent;
             A.Position -= correction * A._inverseMass;

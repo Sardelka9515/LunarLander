@@ -32,7 +32,7 @@ namespace BoxSharp
         public int CollisionIndex = -1;
         public float Mass => _mass;
 
-        public float Restitution = 0.2f;
+        public float Restitution = 0.5f;
         public float StaticFriction = 0.6f;
         public float DynamicFriction = 0.4f;
         public float Inertia => _inertia;
@@ -51,10 +51,13 @@ namespace BoxSharp
             _force += f;
         }
 
-        public void ApplyImpulse(Vector2 impulse, Vector2 contactVector)
+        public void ApplyImpulse(Vector2 impulse, Vector2 offset)
         {
-            Velocity += _inverseMass * impulse;
-            AngularVelocity += _inverseInertia * contactVector.CrossProduct(impulse);
+            var toCenter = -offset;
+            // Get cos between to center and impulse
+            var liner = toCenter.DotProduct(impulse) / (impulse.Length() * offset.Length());
+            Velocity += _inverseMass * impulse * MathF.Abs(liner);
+            AngularVelocity += _inverseInertia * offset.CrossProduct(impulse);
         }
 
         internal virtual void Update(float time)

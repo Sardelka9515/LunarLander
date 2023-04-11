@@ -1,4 +1,4 @@
-#define TEST
+// #define TEST
 using SharpD2D;
 using SharpD2D.Drawing;
 using SharpD2D.Windows;
@@ -175,12 +175,12 @@ namespace LunarLander
             if (IsTurningLeft = IsKeyDown(Key.Left))
             {
                 FuelLevel -= 0.0001f;
-                Lander.ApplyImpulse(Torque * Lander.LeftVector, 3f * Lander.UpVector);
+                Lander.ApplyImpulse(Torque * Lander.LeftVector, 5f * Lander.UpVector);
             }
             if (IsTurningRight = IsKeyDown(Key.Right))
             {
                 FuelLevel -= 0.0001f;
-                Lander.ApplyImpulse(Torque * Lander.RightVector, 3f * Lander.UpVector);
+                Lander.ApplyImpulse(Torque * Lander.RightVector, 5f * Lander.UpVector);
             }
         }
 
