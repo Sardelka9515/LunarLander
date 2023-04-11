@@ -60,7 +60,7 @@ namespace BoxSharp
             // Find most anti-normal face on incident polygon
             int incidentFace = 0;
             float minDot = float.MaxValue;
-            for (int i = 0; i < IncPoly.WorldVertices.Length; ++i)
+            for (int i = 0; i < IncPoly.Vertices.Length; ++i)
             {
                 var dot = referenceNormal.DotProduct(IncPoly.EdgeNormals[i].world);
                 if (dot < minDot)

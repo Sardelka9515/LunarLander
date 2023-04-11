@@ -337,8 +337,8 @@ namespace LunarLander
                         });
                         for (int i = 0; i < p.EdgeNormals.Length; i++)
                         {
-                            var v1 = p.WorldVertices[i];
-                            var v2 = p.WorldVertices[i + 1 >= p.WorldVertices.Length ? 0 : i + 1];
+                            var v1 = p.Vertices[i].world;
+                            var v2 = p.Vertices[i + 1 >= p.Vertices.Length ? 0 : i + 1].world;
                             var normal = p.EdgeNormals[i].world * 15;
                             var l = new BoxSharp.Line((v1 + v2) / 2, normal);
                             gfx.DrawLine(_fireBrush, l.ToLine(), 0.2f);
@@ -415,10 +415,10 @@ namespace LunarLander
 #endif
                     Geometry geo = p.Tag.Geometry;
                     geo ??= p.Tag.Geometry = new(gfx);
-                    geo.BeginFigure(p.LocalVertices[0].ToPointF(), true);
-                    for (int i = 0; i < p.LocalVertices.Length; i++)
+                    geo.BeginFigure(p.Vertices[0].local.ToPointF(), true);
+                    for (int i = 0; i < p.Vertices.Length; i++)
                     {
-                        geo.AddPoint(p.LocalVertices[i].ToPointF());
+                        geo.AddPoint(p.Vertices[i].local.ToPointF());
                     }
                     geo.EndFigure(true);
                     geo.Close();

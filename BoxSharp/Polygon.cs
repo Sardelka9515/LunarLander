@@ -8,13 +8,20 @@ using System.Numerics;
 
 namespace BoxSharp
 {
-    public record struct VecTuple(Vector2 local, Vector2 world);
+    public struct VecTuple
+    {
+        public VecTuple(Vector2 local, Vector2 world)
+        {
+            this.local = local; this.world = world;
+        }
+        public Vector2 local;
+        public Vector2 world;
+    }
     public class Polygon<T> : Shape<T>
     {
         public override ShapeType Type => ShapeType.Polygon;
 
-        public readonly Vector2[] LocalVertices;
-        public readonly Vector2[] WorldVertices;
+        public readonly VecTuple[] Vertices;
         public readonly VecTuple[] Axes;
         public readonly VecTuple[] EdgeNormals;
 
@@ -26,12 +33,11 @@ namespace BoxSharp
             if (vertices.Length <= 2)
                 throw new ArgumentException("Invalid polygon shape", nameof(vertices));
 
-            LocalVertices = vertices;
-            WorldVertices = new Vector2[LocalVertices.Length];
-            EdgeNormals = new VecTuple[LocalVertices.Length];
+            Vertices = vertices.Select(x => new VecTuple(x, default)).ToArray();
+            EdgeNormals = new VecTuple[Vertices.Length];
             List<VecTuple> axes = new(vertices.Length);
             int i = 0;
-            EnumEdges(LocalVertices, (l) =>
+            EnumEdgesLocal(Vertices, (l) =>
             {
                 var dir = EdgeNormals[i].local = Vector2.Normalize(new(-l.Direction.Y, l.Direction.X));
 
@@ -53,9 +59,9 @@ namespace BoxSharp
         internal override void Update(float time)
         {
             base.Update(time);
-            for (int i = 0; i < LocalVertices.Length; i++)
+            for (int i = 0; i < Vertices.Length; i++)
             {
-                WorldVertices[i] = RotationMatrix * LocalVertices[i] + Position;
+                Vertices[i].world = RotationMatrix * Vertices[i].local + Position;
             }
             for (int i = 0; i < Axes.Length; i++)
             {
@@ -68,17 +74,27 @@ namespace BoxSharp
         }
 
         public void EnumEdges(Action<Line> proc)
-            => EnumEdges(WorldVertices, proc);
+            => EnumEdgesWorld(Vertices, proc);
 
-        public static void EnumEdges(Vector2[] vertices, Action<Line> proc)
+        public static void EnumEdgesWorld(VecTuple[] vertices, Action<Line> proc)
         {
             var len = vertices.Length;
             for (int i = 1; i < len; i++)
             {
-                proc(new(vertices[i - 1], vertices[i] - vertices[i - 1]));
+                proc(new(vertices[i - 1].world, vertices[i].world - vertices[i - 1].world));
             }
             // Closing side
-            proc(new(vertices[len - 1], vertices[0] - vertices[len - 1]));
+            proc(new(vertices[len - 1].world, vertices[0].world - vertices[len - 1].world));
+        }
+        public static void EnumEdgesLocal(VecTuple[] vertices, Action<Line> proc)
+        {
+            var len = vertices.Length;
+            for (int i = 1; i < len; i++)
+            {
+                proc(new(vertices[i - 1].local, vertices[i].local - vertices[i - 1].local));
+            }
+            // Closing side
+            proc(new(vertices[len - 1].local, vertices[0].local - vertices[len - 1].local));
         }
 
         /// <summary>
@@ -86,11 +102,11 @@ namespace BoxSharp
         /// </summary>
         public Vector2 GetSupport(Vector2 dir)
         {
-            Vector2 bestVertex = WorldVertices[0];
+            Vector2 bestVertex = Vertices[0].world;
             float bestProjection = bestVertex.DotProduct(dir);
-            for (int i = 1; i < WorldVertices.Length; ++i)
+            for (int i = 1; i < Vertices.Length; ++i)
             {
-                var v = WorldVertices[i];
+                var v = Vertices[i].world;
                 float projection = v.DotProduct(dir);
                 if (projection > bestProjection)
                 {
@@ -120,7 +136,7 @@ namespace BoxSharp
                 // Retrieve support point from B along -n 
                 Vector2 s = B.GetSupport(-n);
                 // Retrieve vertex on face from A
-                Vector2 v = A.WorldVertices[i];
+                Vector2 v = A.Vertices[i].world;
                 // Compute penetration distance
                 float d = n.DotProduct(s - v);
                 // Store greatest distance 
@@ -138,8 +154,8 @@ namespace BoxSharp
 
         public void GetEdge(int index, out Vector2 start, out Vector2 end)
         {
-            start = WorldVertices[index];
-            end = WorldVertices[++index >= WorldVertices.Length ? 0 : index];
+            start = Vertices[index].world;
+            end = Vertices[++index >= Vertices.Length ? 0 : index].world;
         }
 
         void ComputeMass(float density)
@@ -150,12 +166,12 @@ namespace BoxSharp
             float I = 0.0f;
             const float k_inv3 = 1.0f / 3.0f;
 
-            for (int i1 = 0; i1 < LocalVertices.Length; ++i1)
+            for (int i1 = 0; i1 < Vertices.Length; ++i1)
             {
                 // Triangle vertices, third vertex implied as (0, 0)
-                Vector2 p1 = LocalVertices[i1];
-                int i2 = i1 + 1 < LocalVertices.Length ? i1 + 1 : 0;
-                Vector2 p2 = LocalVertices[i2];
+                Vector2 p1 = Vertices[i1].local;
+                int i2 = i1 + 1 < Vertices.Length ? i1 + 1 : 0;
+                Vector2 p2 = Vertices[i2].local;
 
                 float D = MathF.Abs(p1.CrossProduct(p2));
                 float triangleArea = D / 2;
@@ -173,8 +189,8 @@ namespace BoxSharp
             c *= 1.0f / area;
 
             // Translate vertices to centroid (make the centroid (0, 0))
-            for (int i = 0; i < LocalVertices.Length; ++i)
-                LocalVertices[i] -= c;
+            for (int i = 0; i < Vertices.Length; ++i)
+                Vertices[i].local -= c;
 
             _mass = density * area;
             _inverseMass = _mass == 0 ? 0 : 1 / _mass;
@@ -248,10 +264,10 @@ namespace BoxSharp
             {
                 return axis.X * v.X + axis.Y * v.Y;
             }
-            low = high = transformX(WorldVertices[0]);
-            for (int i = 1; i < WorldVertices.Length; i++)
+            low = high = transformX(Vertices[0].world);
+            for (int i = 1; i < Vertices.Length; i++)
             {
-                var point = transformX(WorldVertices[i]);
+                var point = transformX(Vertices[i].world);
                 if (point < low) low = point;
                 else if (point > high) high = point;
             }
