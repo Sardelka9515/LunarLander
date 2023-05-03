@@ -71,8 +71,6 @@ namespace BoxSharp
 
         bool ResolveCollision(Shape<T> A,Shape<T> B)
         {
-            if (A.IsStatic && B.IsStatic)
-                return true;
             _manifold.A = A;
             _manifold.B = B;
             _manifold.Solve();
@@ -176,6 +174,8 @@ namespace BoxSharp
                     var b2 = _objects[j];
                     if (b1.CollisionGroup == b2.CollisionGroup)
                     {
+                        if (b1.IsStatic && b2.IsStatic)
+                            continue;
                         if (!proc(b1,b2))
                             return;
                     }
