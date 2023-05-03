@@ -198,10 +198,6 @@ namespace BoxSharp
             _inertia = I * density;
             _inverseInertia = _inertia == 0 ? 0 : 1 / _inertia;
         }
-        public void SetStatic()
-        {
-            _mass = _inverseMass = _inertia = _inverseInertia = 0;
-        }
 
         /*
         private bool IsIntersectingWith(Polygon<T> p)

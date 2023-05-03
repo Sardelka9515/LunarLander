@@ -37,11 +37,10 @@ namespace LunarLander
         static World Moon = new(new(192, 108));
         static Box Lander = new(new(4.3f, 5.5f))
         {
-            CollisionIndex = 1,
             Tag = new(),
             Gravity = Gravity
         };
-        static Box Pad = new(new(8, 2)) { CollisionIndex = 0, Tag = new() };
+        static Box Pad = new(new(8, 2)) { Tag = new() };
 
 #if TEST
         static Box Ground = new(new(60, 30))
@@ -52,8 +51,6 @@ namespace LunarLander
         {
             Position = new(Moon.Size.X / 2, Moon.Size.Y),
 #endif
-
-            CollisionIndex = 0
         };
         static MainWindow Window;
         static Polygon[] Obstacles;
@@ -119,7 +116,6 @@ namespace LunarLander
                 {
                     Position = new(Random.Shared.Next(i * 10, (i + 1) * 10), Random.Shared.Next(0, 10) + Moon.Size.Y - 15),
                     Angle = Random.Shared.NextSingle() * MathF.PI,
-                    CollisionIndex = 0
                 };
                 if (i < Obstacles.Length - 1)
                 {
@@ -133,7 +129,6 @@ namespace LunarLander
                     {
                         Position = pos,
                         Angle = Random.Shared.NextSingle() * MathF.PI,
-                        CollisionIndex = 0
                     };
                 }
             }
@@ -385,7 +380,7 @@ namespace LunarLander
                     };
                     d.Tag.Spawned = Environment.TickCount64;
                     d.Velocity = (d.Position - Lander.Position) * 20 * (Random.Shared.NextSingle() + 0.4f) + Lander.Velocity * 0.5f;
-                    d.Gravity = Gravity * 2;
+                    d.Gravity = Gravity * 2; // A bit more dramatic
                     d.Angle = Random.Shared.NextSingle() * MathF.PI * 2;
                     d.AngularVelocity = (Random.Shared.NextSingle() - 0.5f) * MathF.PI * 4;
                     if (Random.Shared.Next(0, 3) == 1)
@@ -425,8 +420,7 @@ namespace LunarLander
                     gfx.FillGeometry(geo, brush);
                 }
                 // gfx.DrawText(_smallFont, _whiteBrush, default, $"{b.Mass} {b.Inertia}");
-                if (b.CollisionIndex > 1
-                    && b.Tag.Brush == _fireBrush
+                if (b.Tag.Brush == _fireBrush
                     && Environment.TickCount64 > b.Tag.Spawned + 1000
                     && Random.Shared.Next(0, 100) == 13)
                     b.SetRemove();

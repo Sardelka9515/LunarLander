@@ -29,7 +29,11 @@ namespace BoxSharp
         public float AngularVelocity;
         public Vector2 Position;
         public Vector2 Velocity;
-        public int CollisionIndex = -1;
+
+        /// <summary>
+        /// Only objects in the same group will collide with each other
+        /// </summary>
+        public int CollisionGroup;
         public float Mass => _mass;
 
         public float Restitution = 0.5f;
@@ -46,6 +50,8 @@ namespace BoxSharp
         internal float _mass;
         internal float _inverseMass;
 
+        public bool IsStatic => _inverseInertia == 0 && _inverseMass == 0;
+
         public void ApplyForce(Vector2 f)
         {
             _force += f;
@@ -58,6 +64,10 @@ namespace BoxSharp
             var liner = toCenter.DotProduct(impulse) / (impulse.Length() * offset.Length());
             Velocity += _inverseMass * impulse * MathF.Abs(liner);
             AngularVelocity += _inverseInertia * offset.CrossProduct(impulse);
+        }
+        public void SetStatic()
+        {
+            _mass = _inverseMass = _inertia = _inverseInertia = 0;
         }
 
         internal virtual void Update(float time)

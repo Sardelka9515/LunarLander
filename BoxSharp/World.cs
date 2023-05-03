@@ -19,7 +19,6 @@ namespace BoxSharp
         public event Action<Manifold<T>> OnCollision;
         Thread _physicsThread;
         bool _stopping;
-        int _curCollisionIndex = 0;
         readonly List<Shape<T>> _objects = new();
         readonly IEnumerator<Shape<T>> _enumerator;
         Manifold<T> _manifold = new();
@@ -69,9 +68,11 @@ namespace BoxSharp
             // Resolve collisions
             EnumCollisionPairs(ResolveCollision);
         }
-        List<Manifold<T>> _collisions = new();
+
         bool ResolveCollision(Shape<T> A,Shape<T> B)
         {
+            if (A.IsStatic && B.IsStatic)
+                return true;
             _manifold.A = A;
             _manifold.B = B;
             _manifold.Solve();
@@ -97,8 +98,6 @@ namespace BoxSharp
         }
         public void Add(Shape<T> obj)
         {
-            if (obj.CollisionIndex == -1)
-                obj.CollisionIndex = _curCollisionIndex++;
             _objects.Add(obj);
         }
 
@@ -175,7 +174,7 @@ namespace BoxSharp
                 {
                     var b1 = _objects[i];
                     var b2 = _objects[j];
-                    if (b1.CollisionIndex != b2.CollisionIndex)
+                    if (b1.CollisionGroup == b2.CollisionGroup)
                     {
                         if (!proc(b1,b2))
                             return;
