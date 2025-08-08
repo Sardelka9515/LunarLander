@@ -24,11 +24,11 @@ namespace BoxSharp
             var B = (Polygon<T>)sb;
             m.contactCount = 0;
 
-            var penetrationA = Polygon<T>.FindPenetration(out var faceA, A, B, out _);
+            var penetrationA = Polygon<T>.FindPenetration(out var faceA, A, B);
             if (penetrationA >= 0.0f)
                 return;
 
-            var penetrationB = Polygon<T>.FindPenetration(out var faceB, B, A, out _);
+            var penetrationB = Polygon<T>.FindPenetration(out var faceB, B, A);
             if (penetrationB >= 0.0f)
                 return;
 

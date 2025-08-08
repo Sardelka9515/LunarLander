@@ -59,9 +59,8 @@ namespace BoxSharp
 
         public void ApplyImpulse(Vector2 impulse, Vector2 offset)
         {
-            var toCenter = -offset;
-            // Get cos between to center and impulse
-            var liner = toCenter.DotProduct(impulse) / (impulse.Length() * offset.Length());
+            // Get cos between offset and impulse vector
+            var liner = offset.DotProduct(impulse) / (impulse.Length() * offset.Length());
             Velocity += _inverseMass * impulse * MathF.Abs(liner);
             AngularVelocity += _inverseInertia * offset.CrossProduct(impulse);
         }

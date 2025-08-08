@@ -124,11 +124,10 @@ namespace BoxSharp
         /// <param name="A">The polygon whose edges are to be tested</param>
         /// <param name="B"></param>
         /// <returns>The penetration depth, negative implies that two polygons are overlapping</returns>
-        public static float FindPenetration(out int edgeIndex, Polygon<T> A, Polygon<T> B, out Vector2 sunkContactPoint)
+        public static float FindPenetration(out int edgeIndex, Polygon<T> A, Polygon<T> B)
         {
             int bestIndex = 0;
             float bestDistance = float.MinValue;
-            Vector2 sunkContact = default;
             for (int i = 0; i < A.EdgeNormals.Length; i++)
             {
                 // Retrieve a face normal from A 
@@ -144,11 +143,9 @@ namespace BoxSharp
                 {
                     bestDistance = d;
                     bestIndex = i;
-                    sunkContact = s;
                 }
             }
             edgeIndex = bestIndex;
-            sunkContactPoint = sunkContact;
             return bestDistance;
         }
 
